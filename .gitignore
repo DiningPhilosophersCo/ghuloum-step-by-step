@@ -3,3 +3,4 @@
 **/compiler
 **/my-program
 *.o
+*.fasl
