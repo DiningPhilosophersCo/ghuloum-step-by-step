@@ -61,3 +61,7 @@ Run the LSP with the following in vscode.
 ```
 sh ./dev.sh
 ```
+
+## Chapters
+
+Check out [chapters](./chapters)

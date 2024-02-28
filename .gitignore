@@ -1,3 +1,5 @@
 *~
 .vscode/alive
-gh-compiler
+**/compiler
+**/my-program
+*.o
