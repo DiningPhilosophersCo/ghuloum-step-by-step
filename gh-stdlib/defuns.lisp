@@ -11,8 +11,7 @@
 
 (defun immediate-rep (x)
   "Converts our toy scheme representation of integers to machine representation"
-  (cond
-    ((integer-p x) (ash x fixnum-shift))))
+  (ash x fixnum-shift))
 
 (defun emit (asm &rest args)
   "Assembly printer. Currently only to stdout"
