@@ -3,10 +3,8 @@
 
 (defun integer-p (value)
   "Checks if a value is an integer.
-
   Args:
     value: The value to check.
-
   Returns:
     T if the value is an integer, nil otherwise."
   (and (numberp value) (equal (floor value) value)))

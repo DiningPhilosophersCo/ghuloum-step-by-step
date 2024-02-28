@@ -1,0 +1,23 @@
+.PHONY: all
+
+all: $(SECTION) my-program
+
+$(SECTION): compiler.lisp build.lisp
+	sbcl --script ./build.lisp
+
+runtime.o: runtime.c
+	gcc -c $^ -o $@
+
+$(SECTION).s: ./$(SECTION)
+	./$(SECTION) > $@
+
+integer.o: ./$(SECTION).s
+	as -o $@ -c $^
+
+my-program: runtime.o integer.o 
+	gcc -o $@ $^
+
+.PHONY: clean
+clean: 
+	rm -rf $(SECTION) my-program runtime.o $(SECTION).s integer.o
+

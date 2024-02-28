@@ -1,0 +1,6 @@
+# Instructions
+
+```
+make
+./my-program
+```

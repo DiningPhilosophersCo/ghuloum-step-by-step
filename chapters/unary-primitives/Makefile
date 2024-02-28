@@ -1,4 +1,3 @@
-SECTION = integers
+SECTION = unary-primitives
 
 include ../Makefile.common
-
