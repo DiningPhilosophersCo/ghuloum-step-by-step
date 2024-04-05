@@ -1,5 +1,6 @@
 ;; Refer the paper for these values. Take care to keep it in sync with the runtime written in C
 (defconstant fixnum-shift 2)
+(defconstant wordsize 4)
 
 (defun integer-p (value)
   "Checks if a value is an integer.
@@ -17,3 +18,22 @@
   "Assembly printer. Currently only to stdout"
   (apply #'format (cons t (cons asm args)))
   (format t "~%"))
+
+(defun primcall-operand-1 (expr)
+  "Returns first operand of the expression"
+  (nth 1 expr))
+
+(defun primcall-operand-2 (expr)
+  "Returns second operand of the expression"
+  (nth 2 expr))
+
+(defun primcall-p (expr)
+  "Returns true if the expression `expr' is one of the
+  primitives"
+  (case (car expr)
+    ((add1) t)
+    ((+) t)))
+
+(defun primcall-op (expr)
+  "Returns the operation from sexp"
+  (car expr))
