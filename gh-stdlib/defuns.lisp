@@ -1,6 +1,6 @@
 ;; Refer the paper for these values. Take care to keep it in sync with the runtime written in C
 (defconstant fixnum-shift 2)
-(defconstant wordsize 4)
+(defconstant wordsize 8)
 
 (defun integer-p (value)
   "Checks if a value is an integer.
@@ -37,6 +37,7 @@
   (case (car expr)
     ((add1) t)
     ((+) t)
+    ((cons) t)
     ((if) t)))
 
 (defun primcall-op (expr)
