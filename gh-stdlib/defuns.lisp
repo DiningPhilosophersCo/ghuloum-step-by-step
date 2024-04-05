@@ -27,12 +27,17 @@
   "Returns second operand of the expression"
   (nth 2 expr))
 
+(defun primcall-operand-3 (expr)
+  "Returns third operand of the expression"
+  (nth 3 expr))
+
 (defun primcall-p (expr)
   "Returns true if the expression `expr' is one of the
   primitives"
   (case (car expr)
     ((add1) t)
-    ((+) t)))
+    ((+) t)
+    ((if) t)))
 
 (defun primcall-op (expr)
   "Returns the operation from sexp"
