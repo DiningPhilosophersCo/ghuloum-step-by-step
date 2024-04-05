@@ -11,10 +11,10 @@ runtime.o: runtime.c
 $(SECTION).s: ./$(SECTION)
 	./$(SECTION) > $@
 
-integer.o: ./$(SECTION).s
+$(SECTION).o: ./$(SECTION).s
 	as -o $@ -c $^
 
-my-program: runtime.o integer.o 
+my-program: runtime.o $(SECTION).o
 	gcc -o $@ $^
 
 .PHONY: clean
