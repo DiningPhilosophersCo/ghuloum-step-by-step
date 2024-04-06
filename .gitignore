@@ -4,3 +4,4 @@
 **/my-program
 *.o
 *.fasl
+*.s
