@@ -40,6 +40,36 @@
     ((cons) t)
     ((if) t)))
 
+(defun variable-p (expr)
+  "Returns if the expressions is a lisp variable"
+  (symbolp expr))
+
+;; env utils
+;; At the moment, all variables are in one global table
+;; environment is an assoc list
+(defun env-lookup (var env)
+  "Looks up the variable in the environment"
+  (position var env))
+
+(defun env-extend (var env)
+  "Adds a new var to the environment."
+  (cons var env))
+
+;; let expression utils.
+;; 1. get bindings
+;; 2. get body
+(defun let-p (expr)
+  "Returns if s-expression is an let-expression"
+  (eq (car expr) 'let))
+
+(defun let-bindings (expr)
+  "Returns the bindings in the let-expression"
+  (nth 1 expr))
+
+(defun let-body (expr)
+  "Returns the body of the let expression"
+  (nth 2 expr))
+
 (defun primcall-op (expr)
   "Returns the operation from sexp"
   (car expr))
