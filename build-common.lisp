@@ -1,0 +1,5 @@
+(require "asdf")
+(defun load-chapter (chapter)
+  (load "~/.sbclrc")
+  (asdf:load-asd (merge-pathnames (format nil "~A.asd" chapter) (uiop:getcwd)))
+  (asdf:load-system chapter))

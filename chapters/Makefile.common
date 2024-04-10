@@ -17,6 +17,9 @@ $(SECTION).o: ./$(SECTION).s
 my-program: runtime.o $(SECTION).o
 	gcc -o $@ $^
 
+repl: repl.lisp
+	sbcl --load ./repl.lisp
+
 .PHONY: clean
 clean: 
 	rm -rf $(SECTION) my-program runtime.o $(SECTION).s integer.o

@@ -1,4 +1,3 @@
-(require "asdf")
-(asdf:load-asd (merge-pathnames "binary-primitives.asd" (uiop:getcwd)))
-(asdf:load-system :binary-primitives)
-(sb-ext:save-lisp-and-die "binary-primitives" :toplevel #'binary-primitives--main :executable t)
+(load "../../build-common.lisp")
+(load-chapter "build-primitives")
+(sb-ext:save-lisp-and-die "build-primitives" :toplevel #'build-primitives--main :executable t)
