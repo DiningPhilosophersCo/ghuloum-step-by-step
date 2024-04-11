@@ -77,6 +77,5 @@
   (emit ".global _scheme_entry")
   (emit "_scheme_entry:")
   (emit "mov x27, x0") ;; x27 is our allocation pointer
-  (emit-program '(label-definitions ((lvar (code (a b) (+ a b))) (+ 3 4))))
+  (emit-program '(label-definitions ((lvar (code (a b) (+ a b)))) (+ 3 4)))
   (emit "ret"))
-
