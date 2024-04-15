@@ -60,13 +60,18 @@
             (emit "ldr x1, [sp, #~a]" si)
             (emit "add x0, x0, x1")))))) ; Add the value in x1 to x0
 
+(defun convert-label-name-to-asm (label) 
+  (format nil "_~a" (substitute #\_ #\- label)))
+
 (defun emit-program (ast)
   (trivia:match ast
     ((list 'label-definitions definitions global-expression)
+     (assert (typep definitions 'list))
      (emit "// defun")
      (dolist (definition definitions) ;; Use dolist for iteration
        (trivia:match definition 
-         ((list 'lvar (list 'code variable-list code-expression)) (emit "// todo code"))
+         ((list label-name (list 'code variable-list code-expression))
+	  (emit "~a:" (convert-label-name-to-asm (symbol-name label-name))))
          (t (error "Invalid syntax around definition"))))
      (emit "mov x0, #0"))
     (t
@@ -74,8 +79,13 @@
      (error "AST does not match the expected form"))))
 
 (defun procedure-calls--main ()
+  (emit-program '(label-definitions ((foo-fn (code (a b) (+ a b)))) (+ 3 4)))
   (emit ".global _scheme_entry")
   (emit "_scheme_entry:")
   (emit "mov x27, x0") ;; x27 is our allocation pointer
-  (emit-program '(label-definitions ((lvar (code (a b) (+ a b)))) (+ 3 4)))
   (emit "ret"))
+
+
+(procedure-calls--main)
+
+
