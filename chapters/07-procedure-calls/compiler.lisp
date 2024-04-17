@@ -63,29 +63,73 @@
 (defun convert-label-name-to-asm (label) 
   (format nil "_~a" (substitute #\_ #\- label)))
 
-(defun emit-program (ast)
+(defun emit-program (global-environment stack-index ast)
   (trivia:match ast
     ((list 'label-definitions definitions global-expression)
      (assert (typep definitions 'list))
      (emit "// defun")
-     (dolist (definition definitions) ;; Use dolist for iteration
+     (reduce
+      #'(lambda (global-environment definition) 
        (trivia:match definition 
          ((list label-name (list 'code variable-list code-expression))
-	  (emit "~a:" (convert-label-name-to-asm (symbol-name label-name))))
+	  (emit "~a:" (convert-label-name-to-asm (symbol-name label-name)))
+
+	  ;; We would not try to extend the environment like we did
+	  ;; before, because that would also add name duplication to
+	  ;; the list of our problems, we would instead just look up
+	  ;; the variable on the stack based on its index in the
+	  ;; parameter list.
+
+	  ;; so we assume the variables have been pushed onto the
+	  ;; stack in the order of the parameter list, which means the
+	  ;; topmost variable in the stack is the last one. ie
+	  ;; (sp register - wordsize) points to the last argument
+	  ;; sp - (8 * n-params) is the first one
+	  ;; sp points to return address
+
+
+	  ;; the paper suggests a solution to address the name
+	  ;; conflicts between variables of different functions: it
+	  ;; says that there should be a mapping between each function
+	  ;; declaration and its parameter list. This way when if two
+	  ;; different functions have the same parameter names, they
+	  ;; would be still be local because the mapping would be
+	  ;; different.
+
+
+	  ;; We skip the part where labels are mapped to unique forms in following
+	  ;; > For the labels form, a new set of unique labels are
+          ;; > created and the initial environment is constructed to map
+          ;; > each of the lvars to its corresponding label. 
+	  ;; We assume the labels are already unique as provided by
+	  ;; the user.
+	  ;; So, the initial environment is constructed mapping the
+	  ;; variables list to the lvars.
+
+	  (let ((new-global-environment
+		  (cons `(label-name '(,variable-list ,code-expression))
+			global-environment))
+		(local-environment
+		  (reduce
+		   (lambda (env param) (env-extend param env))
+		   variable-list))) ;; 
+	    (emit-expr code-expression stack-index local-environment)
+	    new-global-environment))
          (t (error "Invalid syntax around definition"))))
-     (emit "mov x0, #0"))
+      definitions
+      :initial-value global-environment))
     (t
-     (emit "// invalid ast")
-     (error "AST does not match the expected form"))))
+     (emit "// invalid ast"))))
 
 (defun procedure-calls--main ()
-  (emit-program '(label-definitions ((foo-fn (code (a b) (+ a b)))) (+ 3 4)))
-  (emit ".global _scheme_entry")
-  (emit "_scheme_entry:")
-  (emit "mov x27, x0") ;; x27 is our allocation pointer
-  (emit "ret"))
-
-
-(procedure-calls--main)
-
+  (let ((global-environment nil)
+	(stack-index 0))
+    (emit-program global-environment stack-index '(label-definitions
+			((foo-fn (code (a b) (+ a b)))
+			 (bar-fn (code (a b)  (- a b))))
+			(+ (foo-fn 3 4) (bar-fn 5 6))))
+    (emit ".global _scheme_entry")
+    (emit "_scheme_entry:")
+    (emit "mov x27, x0") ;; x27 is our allocation pointer
+    (emit "ret")))
 

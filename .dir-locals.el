@@ -1,2 +1,3 @@
-((lisp-mode . ((inferior-lisp-program . "make repl"))))
+((lisp-mode . ((compile-command . "make")
+	       (inferior-lisp-program . "make repl"))))
 

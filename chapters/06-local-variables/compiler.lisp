@@ -6,6 +6,10 @@
       (progn
          (emit "// begin let-body")
          (emit-expr body si env))
+      ;; Because pattern matching wasn't setup in this example,
+      ;; I used car/cdr
+      ;; bindings-head is the first of the bindings. ie. a binding
+      ;; bindings-tail is the rest of the bindings
       (let ((bindings-head (car bindings))
             (bindings-tail (cdr bindings)))
         (let ((new-env (env-extend (car bindings-head) env)))
