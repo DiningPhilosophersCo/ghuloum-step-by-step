@@ -1,6 +1,20 @@
 ;;  This section introduces and environment
 (ql:quickload "trivia")
 
+;; env utils
+;; At the moment, all variables are in one global table
+;; environment is an assoc list
+(defun env-lookup (var env)
+  "Looks up the variable in the environment"
+  (let ((pos (assoc var env)))
+    (if (not (null pos))
+	pos
+	(error (format nil "~a is not found in environment" var)))))
+
+(defun env-extend (variable-name variable-value env)
+  "Adds a new var to the environment."
+  (cons `(,variable-name . ,variable-value) env))
+
 (defun emit-let (bindings body si env)
   "Emits the let expression"
   (emit "// begin let-expression")
@@ -8,13 +22,29 @@
       (progn
          (emit "// begin let-body")
          (emit-expr body si env))
-      (let ((bindings-head (car bindings))
-            (bindings-tail (cdr bindings)))
-        (let ((new-env (env-extend (car bindings-head) env)))
+
+
+      (trivia:match bindings
+	((cons bindings-head bindings-tail)
+
+
+	 (trivia:match binding-head
+	   ((binding-name . binding-value)
+
+	    (let* ((new-env
+		     (env-extend binding-name binding-value env)))
           (emit "// begin let-binding")
-          (emit-expr (nth 1 bindings-head) si env)
+          (emit-expr binding-value si env)
           (emit "str x0, [sp, #~a]" si)
-          (emit-let bindings-tail body (- si wordsize) new-env)))))
+	   (emit-let bindings-tail body (- si wordsize) new-env)))
+
+	   ((nil (error "Empty binding received"))))
+
+
+	((nil (error "Empty bindings provided to emit-let"))))
+
+
+      )))
 
 (defun emit-expr (x si env)
   "Currently supports
@@ -25,12 +55,14 @@
    5. Heap Allocation
    6. Local variables (let bindings)"
   (cond
+   ((null x) (error "null value received"))
    ((integer-p x)
          (emit "// begin emit-expr immediate")
          (emit "movz x0, #~a" (immediate-rep x)))
    ((variable-p x)
-         (emit "// begin emit-expr variable")
-         (emit "ldr x0, [sp, #~a]" (- (* wordsize (env-lookup x env)))))
+         (emit "// begin emit-expr variablesss")
+    (emit "ldr x0, [sp, #~a]" (- (* wordsize (env-lookup x env))))
+    (emit "// end emit-expr variable"))
    ((let-p x)
           (emit "// begin emit-expr let")
           (emit-let (let-bindings x) (let-body x) si env))
@@ -71,9 +103,17 @@
 (defun local-environment--create (variable-list) ; list of strings
   "Creates a new local environment for a function declaration given it's parameter list"
   (reduce
-   #'(lambda (acc variable) (env-extend `(,variable nil) acc))
+   #'(lambda (acc variable)
+       (trivia:match variable
+	 ((cons variable-name variable-value) (env-extend variable-name variable-value acc))
+	 (t (error "Binding was not a pair")))
+       )
    variable-list
-   :initial-value '()))
+   :initial-value nil))
+
+;; (trivia:match (cons 1  2)
+;;   ((cons a b) (print a))  ; This pattern matches a pair (a . b)
+;;   (_ 'not-matched))
 
 (defun emit-program (global-environment stack-index ast)
   (trivia:match ast
@@ -117,6 +157,7 @@
 	  ;; the user.
 	  ;; So, the initial environment is constructed mapping the
 	  ;; variables list to the lvars.
+
 	  (let*
 	      ((function-def `(,label-name `(,variable-list ,code-expression)))
 	       (new-global-environment
@@ -145,4 +186,5 @@
     (emit "mov x0, #0")
     (emit "ret")))
 
+(procedure-calls--main)
 
