@@ -63,6 +63,18 @@
 (defun convert-label-name-to-asm (label) 
   (format nil "_~a" (substitute #\_ #\- label)))
 
+
+(defun global-environment--add (binding global-environment)
+  "Adds a tuple/pair to `global-environment' assoc list"
+  (cons binding global-environment))
+
+(defun local-environment--create (variable-list) ; list of strings
+  "Creates a new local environment for a function declaration given it's parameter list"
+  (reduce
+   #'(lambda (acc variable) (env-extend `(,variable nil) acc))
+   variable-list
+   :initial-value '()))
+
 (defun emit-program (global-environment stack-index ast)
   (trivia:match ast
     ((list 'label-definitions definitions global-expression)
@@ -105,14 +117,11 @@
 	  ;; the user.
 	  ;; So, the initial environment is constructed mapping the
 	  ;; variables list to the lvars.
-
-	  (let ((new-global-environment
-		  (cons `(label-name '(,variable-list ,code-expression))
-			global-environment))
-		(local-environment
-		  (reduce
-		   (lambda (env param) (env-extend param env))
-		   variable-list))) ;; 
+	  (let*
+	      ((function-def `(,label-name `(,variable-list ,code-expression)))
+	       (new-global-environment
+		 (global-environment--add function-def global-environment))
+	       (local-environment (local-environment--create variable-list))) ;; 
 	    (emit-expr code-expression stack-index local-environment)
 	    new-global-environment))
          (t (error "Invalid syntax around definition"))))
@@ -124,12 +133,16 @@
 (defun procedure-calls--main ()
   (let ((global-environment nil)
 	(stack-index 0))
-    (emit-program global-environment stack-index '(label-definitions
+    (emit-program
+     global-environment
+     stack-index '(label-definitions
 			((foo-fn (code (a b) (+ a b)))
-			 (bar-fn (code (a b)  (- a b))))
+			 (bar-fn (code (a b) (- a b))))
 			(+ (foo-fn 3 4) (bar-fn 5 6))))
     (emit ".global _scheme_entry")
     (emit "_scheme_entry:")
     (emit "mov x27, x0") ;; x27 is our allocation pointer
+    (emit "mov x0, #0")
     (emit "ret")))
+
 
