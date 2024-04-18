@@ -38,10 +38,10 @@
           (emit "str x0, [sp, #~a]" si)
 	   (emit-let bindings-tail body (- si wordsize) new-env)))
 
-	   ((nil (error "Empty binding received"))))
+	   ((t (error "Empty binding received"))))
 
 
-	((nil (error "Empty bindings provided to emit-let"))))
+	((t (error "Empty bindings provided to emit-let"))))
 
 
       )))
