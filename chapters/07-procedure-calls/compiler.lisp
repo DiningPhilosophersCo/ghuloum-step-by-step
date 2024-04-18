@@ -29,7 +29,7 @@
 
 
 	 (trivia:match binding-head
-	   ((binding-name . binding-value)
+	   ((cons binding-name binding-value)
 
 	    (let* ((new-env
 		     (env-extend binding-name binding-value env)))
@@ -45,6 +45,7 @@
 
 
       )))
+
 
 (defun emit-expr (x si env)
   "Currently supports
