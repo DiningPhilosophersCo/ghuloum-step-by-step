@@ -4,14 +4,23 @@
 ;; env utils
 ;; At the moment, all variables are in one global table
 ;; environment is an assoc list
-(defun env-lookup (var env)
+(defun env-find (var env)
   "Looks up the variable in the environment"
-  (let ((pos (assoc var env)))
-    (if (not (null pos))
-	pos
-	(error (format nil "~a is not found in environment" var)))))
+  (alist--find 0 var env))
 
-(defun env-extend (variable-name variable-value env)
+;; Helpers for env utils above
+(defun alist--find (position key alist)
+  "Helper: returns the position where key was found. Else errors"
+  (trivia:match alist
+    ((cons head tail)
+     (trivia:match head
+       ((list k v) (declare (ignore v)) (if (eq k key) position (alist--find (+ position 1) key tail)))
+       ((list k) (if (eq k key) position (alist--find (+ position 1) key tail)))
+       ((list k nil) (if (eq k key) position (alist--find (+ position 1) key tail)))
+       (_ (error "Should have been a pair. alists are lists of pairs"))))
+    (nil (error (format nil "Could not find key ~a in alist" key)))))
+     
+(defun env-add (variable-name variable-value env)
   "Adds a new var to the environment."
   (cons `(,variable-name . ,variable-value) env))
 
@@ -28,23 +37,20 @@
 	((cons bindings-head bindings-tail)
 
 
-	 (trivia:match binding-head
-	   ((cons binding-name binding-value)
+	 (trivia:match bindings-head
+	   ((list binding-name binding-value)
 
 	    (let* ((new-env
-		     (env-extend binding-name binding-value env)))
-          (emit "// begin let-binding")
-          (emit-expr binding-value si env)
-          (emit "str x0, [sp, #~a]" si)
-	   (emit-let bindings-tail body (- si wordsize) new-env)))
+		     (env-add binding-name binding-value env)))
+              (emit "// begin let-binding")
+              (emit-expr binding-value si env)
+              (emit "str x0, [sp, #~a]" si)
+	      (emit-let bindings-tail body (- si wordsize) new-env)))
 
-	   ((t (error "Empty binding received"))))
-
-
-	((t (error "Empty bindings provided to emit-let"))))
+	   (_ (error "Empty binding received"))))
 
 
-      )))
+	(_ (error "wrong bindings format")))))
 
 
 (defun emit-expr (x si env)
@@ -61,9 +67,10 @@
          (emit "// begin emit-expr immediate")
          (emit "movz x0, #~a" (immediate-rep x)))
    ((variable-p x)
-         (emit "// begin emit-expr variablesss")
-    (emit "ldr x0, [sp, #~a]" (- (* wordsize (env-lookup x env))))
-    (emit "// end emit-expr variable"))
+    (let ((index (* (* -1 wordsize) (env-find x env))))
+      (emit "// begin emit-expr variablesss")
+      (emit "ldr x0, [sp, #~a]" index)
+      (emit "// end emit-expr variable")))
    ((let-p x)
           (emit "// begin emit-expr let")
           (emit-let (let-bindings x) (let-body x) si env))
@@ -103,12 +110,9 @@
 
 (defun local-environment--create (variable-list) ; list of strings
   "Creates a new local environment for a function declaration given it's parameter list"
+  (assert (not (null variable-list)))
   (reduce
-   #'(lambda (acc variable)
-       (trivia:match variable
-	 ((cons variable-name variable-value) (env-extend variable-name variable-value acc))
-	 (t (error "Binding was not a pair")))
-       )
+   #'(lambda (acc variable) (env-add variable nil acc))
    variable-list
    :initial-value nil))
 
@@ -159,13 +163,17 @@
 	  ;; So, the initial environment is constructed mapping the
 	  ;; variables list to the lvars.
 
+	  (assert (not (null variable-list)))
+
 	  (let*
 	      ((function-def `(,label-name `(,variable-list ,code-expression)))
 	       (new-global-environment
 		 (global-environment--add function-def global-environment))
 	       (local-environment (local-environment--create variable-list))) ;; 
 	    (emit-expr code-expression stack-index local-environment)
-	    new-global-environment))
+	    new-global-environment)
+	  (emit "// TODO global expression ~a" global-expression)
+	  )
          (t (error "Invalid syntax around definition"))))
       definitions
       :initial-value global-environment))
@@ -186,6 +194,4 @@
     (emit "mov x27, x0") ;; x27 is our allocation pointer
     (emit "mov x0, #0")
     (emit "ret")))
-
-(procedure-calls--main)
 
