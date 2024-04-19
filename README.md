@@ -52,6 +52,20 @@ Run the LSP with the following in vscode.
 }
 ```
 
+For Emacs, run the following in a terminal session
+
+```
+sbcl --eval (require :asdf) --eval (asdf:load-system :alive-lsp) --eval (alive/server:start)"
+```
+
+Then, set,
+
+```emacs-lisp
+(eglot-server-programs . ((lisp-mode . ("localhost" 8006))))
+```
+
+Example dir-locals that could be used with this project is checked into the repository
+
 > [!NOTE]
 > You test the LSP server on the terminal with,
 > `sbcl --non-interactive --eval '(ql:quickload "alive-lsp")' --eval '(alive/server::start :port 8006)'`
